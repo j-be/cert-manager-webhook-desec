@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 )
 
 const baseURL = "https://desec.io/api/v1"
@@ -39,7 +40,7 @@ func (a *API) request(method, path string, body io.Reader) (*http.Response, erro
 
 	url := baseURL + path
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: time.Second * 10}
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
