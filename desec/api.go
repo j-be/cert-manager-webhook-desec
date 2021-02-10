@@ -40,7 +40,7 @@ type RRSet struct {
 	SubName string   `json:"subname,omitempty"`
 	Name    string   `json:"name,omitempty"`
 	Type    string   `json:"type,omitempty"`
-	Records []string `json:"records,omitempty"`
+	Records []string `json:"records"`
 	TTL     int      `json:"ttl,omitempty"`
 	Created string   `json:"created,omitempty"`
 	Touched string   `json:"touched,omitempty"`
@@ -74,9 +74,6 @@ func (a *API) request(method, path string, body io.Reader, target interface{}) e
 		return err
 	}
 	defer resp.Body.Close()
-
-	// debug
-	//fmt.Printf("Response Status Code = %d\n", resp.StatusCode)
 
 	//if resp.StatusCode != http.StatusOK {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
@@ -163,10 +160,49 @@ func (a *API) AddRecord(subName, domainName, rtype, content string, ttl int) (RR
 	return rrsets, nil
 }
 
+// DeleteRecord - Deletes a record from an existing RRSet if exists
+func (a *API) DeleteRecord(subName, domainName, rtype, content string) (RRSets, error) {
+	// Check if RRSet actually exists
+	rrsets, err := a.GetRRSets(subName, domainName, rtype)
+	if err != nil {
+		return nil, err
+	}
+	if len(rrsets) > 0 {
+		rrset := rrsets[0]
+		var records []string
+		// Create a new records slice containing all records except for the one to be deleted
+		for _, r := range rrset.Records {
+			if r != content {
+				records = append(records, r)
+			}
+		}
+		// Check that records have actually changed before sending update to the API
+		if len(rrset.Records) != len(records) {
+			// Fix empty slice from being marshalled as null
+			if len(records) == 0 {
+				records = make([]string, 0)
+			}
+			rrset.Records = records
+			rrsets, err := a.updateRRSet(rrset, domainName)
+			if err != nil {
+				return nil, err
+			}
+			return rrsets, nil
+		}
+		return rrsets, nil
+	}
+	// No existing RRSet found so just return an empty RRSets object
+	return RRSets{}, nil
+}
+
 func (a *API) updateRRSet(rrset RRSet, domainName string) (RRSets, error) {
 	rrsets := RRSets{}
 	rrsets = append(rrsets, rrset)
 	rawJSON, err := json.Marshal(rrsets)
+	if err != nil {
+		return nil, err
+	}
+	//fmt.Printf("rawJSON = %s\n", string(rawJSON)) // debug
 	method := "PUT"
 	path := "domains/" + domainName + "/rrsets/"
 	err = a.request(method, path, bytes.NewBuffer(rawJSON), &rrsets)
