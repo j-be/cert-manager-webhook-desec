@@ -156,7 +156,15 @@ func (a *API) AddRecord(subName, domainName, rtype, content string, ttl int) (RR
 		rrset = RRSet{SubName: subName, Type: rtype, Records: records, TTL: ttl}
 	}
 	// write RRSet to deSEC
-	rrsets = RRSets{}
+	rrsets, err = a.updateRRSet(rrset, domainName)
+	if err != nil {
+		return nil, err
+	}
+	return rrsets, nil
+}
+
+func (a *API) updateRRSet(rrset RRSet, domainName string) (RRSets, error) {
+	rrsets := RRSets{}
 	rrsets = append(rrsets, rrset)
 	rawJSON, err := json.Marshal(rrsets)
 	method := "PUT"
