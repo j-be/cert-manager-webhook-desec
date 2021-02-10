@@ -33,7 +33,7 @@ type DNSDomain struct {
 type DNSDomains []DNSDomain
 
 // Request builds the raw request
-func (a *API) request(method, path string, body io.Reader) (*http.Response, error) {
+func (a *API) request(method, path string, body io.Reader, target interface{}) error {
 	if path[0] != '/' {
 		path = "/" + path
 	}
@@ -44,7 +44,7 @@ func (a *API) request(method, path string, body io.Reader) (*http.Response, erro
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req.Header.Set("Authorization", "Token "+a.Token)
 	req.Header.Set("Accept", "application/json")
@@ -52,33 +52,35 @@ func (a *API) request(method, path string, body io.Reader) (*http.Response, erro
 
 	// TODO: add k8s logging
 	// klog.V(6).Infof("%s %s", method, url)
-	rawResp, err := client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+			return fmt.Errorf("%s %s unknown error occured", method, path)
+		}
+		return fmt.Errorf("%s %s error: %s", method, path, errResp.Detail)
+	}
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		return fmt.Errorf("%s %s response parsing error: %v", method, path, err)
 	}
 
-	return rawResp, nil
+	return nil
 }
 
-// GetDomains gets an array of domains
+// GetDomains - returns all dns domains managed by deSEC
 func (a *API) GetDomains() (DNSDomains, error) {
 	method, path := "GET", "domains/"
-	resp, err := a.request(method, path, nil)
+	domains := new(DNSDomains)
+	err := a.request(method, path, nil, domains)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		var domains DNSDomains
-		if err := json.NewDecoder(resp.Body).Decode(&domains); err != nil {
-			return nil, fmt.Errorf("%s %s response parsing error: %v", method, path, err)
-		}
-		return domains, nil
-	}
-	var errResp ErrorResponse
-	if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
-		return nil, fmt.Errorf("%s %s unknown error occured", method, path)
-	}
-	return nil, fmt.Errorf("%s %s error: %s", method, path, errResp.Detail)
+	return *domains, nil
 }
 
 /*
