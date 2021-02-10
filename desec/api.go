@@ -135,6 +135,10 @@ func (a *API) AddRecord(subName, domainName, rtype, content string, ttl int) (RR
 	if err != nil {
 		return nil, err
 	}
+	// Quote content if record type is TXT
+	if rtype == "TXT" {
+		content = "\"" + content + "\""
+	}
 	var rrset RRSet
 	if len(rrsets) > 0 {
 		// RRSet exists, so see if we need to append a new record
@@ -168,6 +172,10 @@ func (a *API) DeleteRecord(subName, domainName, rtype, content string) (RRSets, 
 		return nil, err
 	}
 	if len(rrsets) > 0 {
+		// Quote content if record type is TXT
+		if rtype == "TXT" {
+			content = "\"" + content + "\""
+		}
 		rrset := rrsets[0]
 		var records []string
 		// Create a new records slice containing all records except for the one to be deleted
