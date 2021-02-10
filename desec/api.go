@@ -97,33 +97,27 @@ func (a *API) getDNSDomains() (DNSDomains, error) {
 	return *domains, nil
 }
 
-// GetDNSDomain - get the dns domain that matches the target fqdn
-func (a *API) GetDNSDomain(fqdn string) (*DNSDomain, error) {
+// GetDNSDomain - get the dns domain associated with the given subdomain
+func (a *API) GetDNSDomain(subdomain string) (*DNSDomain, error) {
 	domains, err := a.getDNSDomains()
 	if err != nil {
 		return nil, err
 	}
 	for _, v := range domains {
-		if strings.HasSuffix(fqdn, v.Name) {
+		if strings.HasSuffix(subdomain, v.Name) {
 			return &v, nil
 		}
 	}
 	return nil, fmt.Errorf("domain not found")
 }
 
-// GetRRSets returns all TXT records for the subdomain portion of fqdn
-func (a *API) GetRRSets(fqdn string) (RRSets, error) {
-	dnsDomain, err := a.GetDNSDomain(fqdn)
-	if err != nil {
-		return nil, err
-	}
-	domain := dnsDomain.Name
-	subname := fqdn[:len(fqdn)-len(domain)-1]
+// GetRRSets returns all resource record sets for a given domain, subdomain and type
+func (a *API) GetRRSets(subName, domainName, rtype string) (RRSets, error) {
 	method := "GET"
-	path := "domains/" + domain + "/rrsets/?subname=" + subname + "&type=TXT"
+	path := "domains/" + domainName + "/rrsets/?subname=" + subName + "&type=" + rtype
 
 	rrsets := new(RRSets)
-	err = a.request(method, path, nil, rrsets)
+	err := a.request(method, path, nil, rrsets)
 	if err != nil {
 		return nil, err
 	}
