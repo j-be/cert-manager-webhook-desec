@@ -1,6 +1,7 @@
 package desec
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,6 +42,8 @@ type RRSet struct {
 	Type    string   `json:"type,omitempty"`
 	Records []string `json:"records,omitempty"`
 	TTL     int      `json:"ttl,omitempty"`
+	Created string   `json:"created,omitempty"`
+	Touched string   `json:"touched,omitempty"`
 }
 
 // RRSets is a slice of Resource Record Set objects
@@ -72,7 +75,11 @@ func (a *API) request(method, path string, body io.Reader, target interface{}) e
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	// debug
+	//fmt.Printf("Response Status Code = %d\n", resp.StatusCode)
+
+	//if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		var errResp ErrorResponse
 		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
 			return fmt.Errorf("%s %s unknown error occured", method, path)
@@ -87,7 +94,7 @@ func (a *API) request(method, path string, body io.Reader, target interface{}) e
 }
 
 // GetDNSDomains - returns all dns domains managed by deSEC
-func (a *API) getDNSDomains() (DNSDomains, error) {
+func (a *API) GetDNSDomains() (DNSDomains, error) {
 	method, path := "GET", "domains/"
 	domains := new(DNSDomains)
 	err := a.request(method, path, nil, domains)
@@ -99,7 +106,7 @@ func (a *API) getDNSDomains() (DNSDomains, error) {
 
 // GetDNSDomain - get the dns domain associated with the given subdomain
 func (a *API) GetDNSDomain(subdomain string) (*DNSDomain, error) {
-	domains, err := a.getDNSDomains()
+	domains, err := a.GetDNSDomains()
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +129,41 @@ func (a *API) GetRRSets(subName, domainName, rtype string) (RRSets, error) {
 		return nil, err
 	}
 	return *rrsets, nil
+}
+
+// AddRecord - Adds a resource record to a new or existing RRSet
+func (a *API) AddRecord(subName, domainName, rtype, content string, ttl int) (RRSets, error) {
+	// First check if there's already and existing RRSet
+	rrsets, err := a.GetRRSets(subName, domainName, rtype)
+	if err != nil {
+		return nil, err
+	}
+	var rrset RRSet
+	if len(rrsets) > 0 {
+		// RRSet exists, so see if we need to append a new record
+		rrset = rrsets[0]
+		for _, r := range rrset.Records {
+			if r == content {
+				// record already exist so just return
+				return rrsets, nil
+			}
+		}
+		// record doesn't exit so append it
+		rrset.Records = append(rrset.Records, content)
+	} else {
+		// No existing RRSet found, so create a new one
+		records := []string{content}
+		rrset = RRSet{SubName: subName, Type: rtype, Records: records, TTL: ttl}
+	}
+	// write RRSet to deSEC
+	rrsets = RRSets{}
+	rrsets = append(rrsets, rrset)
+	rawJSON, err := json.Marshal(rrsets)
+	method := "PUT"
+	path := "domains/" + domainName + "/rrsets/"
+	err = a.request(method, path, bytes.NewBuffer(rawJSON), &rrsets)
+	if err != nil {
+		return nil, err
+	}
+	return rrsets, nil
 }
