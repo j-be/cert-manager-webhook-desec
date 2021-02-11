@@ -1,1 +1,6 @@
-{}
+{
+    "tokenSecretRef": {
+        "name": "desec-token",
+        "key": "token"
+    }
+}
