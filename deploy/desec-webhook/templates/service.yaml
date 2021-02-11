@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: { { include "desec-webhook.fullname" . } }
+  name: {{ include "desec-webhook.fullname" . }}
   labels:
-    app: { { include "desec-webhook.name" . } }
-    chart: { { include "desec-webhook.chart" . } }
-    release: { { .Release.Name } }
-    heritage: { { .Release.Service } }
+    app: {{ include "desec-webhook.name" . }}
+    chart: {{ include "desec-webhook.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 spec:
-  type: { { .Values.service.type } }
+  type: {{ .Values.service.type }}
   ports:
-    - port: { { .Values.service.port } }
+    - port: {{ .Values.service.port }}
       targetPort: https
       protocol: TCP
       name: https
   selector:
-    app: { { include "desec-webhook.name" . } }
-    release: { { .Release.Name } }
+    app: {{ include "desec-webhook.name" . }}
+    release: {{ .Release.Name }}
