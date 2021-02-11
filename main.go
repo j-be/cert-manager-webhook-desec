@@ -16,7 +16,7 @@ import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cert-manager/cert-manager/pkg/issuer/acme/dns/util"
-	"github.com/cert-manager/webhook-example/desec"
+	"github.com/jetstack/cert-manager-webhook-desec/desec"
 )
 
 // GroupName is the API group name (should be unique cluster-wide)
