@@ -44,6 +44,14 @@ An example `ClusterIssuer` is provided in the `examples/letsencrypt-staging-issu
 
 An example certificate manifest is provide in `examples/test-certificate.yaml`. Edit as required for production certificates.
 
+### Check the Certificate
+
+Use the following check the deployed certificate, replacing _test-example-com-tls_ with the **secretName** you used in the previous step.
+
+```bash
+$ kubectl get secret test-example-com-tls -o json | jq -r '.data."tls.crt"' | base64 -d | openssl x509 -text -noout
+```
+
 ## Building
 
 ```bash
