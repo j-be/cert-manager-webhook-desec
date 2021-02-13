@@ -10,7 +10,7 @@ A Kubernetes cluster with cert-manager deployed. If you haven't already installe
 
 ### Using regular manifests
 
-An example webhook deployment, with it's associated roles, role bindings, service and required tls certificates, is provided in the file `examples/deploy/desec-webhook.yaml`. The example manifest will deploy to the default namespace. To set a different namespace, replace all instances of `default` with the namespace of your choice. Don't miss the annotation ` cert-manager.io/inject-ca-from` in the `APIService` or the `dnsNames` for the webhook `Certificate`. The following sed command should be sufficient on the current example manifest to replace all the necessary namespace references:
+An example webhook deployment, with it's associated roles, role bindings, service and required tls certificates, is provided in the file `examples/deploy/desec-webhook.yaml`. The example manifest will deploy to the default namespace. To set a different namespace, replace all instances of `default` with the namespace of your choice. Don't miss the annotation ` cert-manager.io/inject-ca-from` in the `APIService` or the `dnsNames` for the webhook `Certificate`. The following will replace all the necessary namespace references in the example manifest:
 
 ```bash
 $ sed -i 's/default/yournamespace/g' examples/deploy/desec-webhook.yaml
@@ -38,7 +38,7 @@ $ echo -n "your-api-token" | base64
 
 ### Deploy an Issuer
 
-An example `ClusterIssuer` is provided in the `examples/letsencrypt-staging-issuer.yaml` file. It uses the letsencrypt staging server, but it can be adapted for the letsencrypt production server or other acme server. It can also be adapted to an `Issuer` instead of a `ClusterIssuer` if it should only server a single namespace.
+An example `ClusterIssuer` is provided in the `examples/letsencrypt-staging-issuer.yaml` file. It uses the letsencrypt staging server, but it can be adapted for the letsencrypt production server or other acme server. `Issuer` can be used instead of `ClusterIssuer` if you only want to issue certificates in a single namespace.
 
 ### Deploy a Certificate
 
@@ -68,3 +68,5 @@ $ TEST_ZONE_NAME=example.com. make test
 
 The example file has a number of areas you must fill in and replace with your
 own options in order for tests to pass.
+
+See [here](./testdata/desec/README.md) for testing details.
