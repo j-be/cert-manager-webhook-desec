@@ -13,8 +13,8 @@ certManager:
   serviceAccountName: cert-manager
 
 image:
-  repository: kmorning/cert-manager-webhook-desec
-  tag: latest
+  repository: ghcr.io/j-be/cert-manager-webhook-desec
+  tag: ""
   pullPolicy: IfNotPresent
 
 nameOverride: ""
