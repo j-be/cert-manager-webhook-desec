@@ -37,8 +37,28 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}
 
-    # Build and push
-    - name: Build and push
+    # Build
+    - name: Build
+      uses: docker/build-push-action@v4
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    # Load
+    - name: Load AMD64
+      uses: docker/build-push-action@v4
+      with:
+        load: true
+        platforms: linux/amd64
+        tags: dummy-tag:amd64
+    - name: Load ARM64
+      uses: docker/build-push-action@v4
+      with:
+        load: true
+        platforms: linux/arm64
+        tags: dummy-tag:arm64
+
+    # Push
+    - name: Push both
       uses: docker/build-push-action@v4
       with:
         push: true
