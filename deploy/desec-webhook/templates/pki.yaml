@@ -29,7 +29,7 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   secretName: {{ include "desec-webhook.rootCACertificate" . }}
-  duration: 43800h # 5y
+  duration: 43800h0m0s # 5y
   issuerRef:
     name: {{ include "desec-webhook.selfSignedIssuer" . }}
   commonName: "ca.desec-webhook.cert-manager"
@@ -67,7 +67,7 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   secretName: {{ include "desec-webhook.servingCertificate" . }}
-  duration: 8760h # 1y
+  duration: 8760h0m0s # 1y
   issuerRef:
     name: {{ include "desec-webhook.rootCAIssuer" . }}
   dnsNames:
