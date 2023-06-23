@@ -18,8 +18,8 @@ spec:
       labels:
         app: {{ include "desec-webhook.name" . }}
         release: {{ .Release.Name }}
-    annotations:
-      container.apparmor.security.beta.kubernetes.io/desec-webhook: runtime/default
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/desec-webhook: runtime/default
     spec:
       serviceAccountName: {{ include "desec-webhook.fullname" . }}
       securityContext:
