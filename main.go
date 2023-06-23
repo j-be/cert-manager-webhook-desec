@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"os"
 
-	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 
-	"github.com/jetstack/cert-manager-webhook-desec/desec"
-	"github.com/jetstack/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	"github.com/jetstack/cert-manager/pkg/acme/webhook/cmd"
-	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/util"
+	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
+	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
+	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	"github.com/cert-manager/cert-manager/pkg/issuer/acme/dns/util"
+	"github.com/j-be/cert-manager-webhook-desec/desec"
 )
 
 // GroupName is the API group name (should be unique cluster-wide)
@@ -45,13 +45,15 @@ func main() {
 	// webhook, where the Name() method will be used to disambiguate between
 	// the different implementations.
 	cmd.RunWebhookServer(GroupName,
-		&deSECDNSProviderSolver{},
+		&deSECDNSProviderSolver{
+			BaseUrl: "https://desec.io/api/v1",
+		},
 	)
 }
 
 // deSECDNSProviderSolver implements the provider-specific logic needed to
 // 'present' an ACME challenge TXT record for your own DNS provider.
-// To do so, it must implement the `github.com/jetstack/cert-manager/pkg/acme/webhook.Solver`
+// To do so, it must implement the `github.com/cert-manager/cert-manager/pkg/acme/webhook.Solver`
 // interface.
 type deSECDNSProviderSolver struct {
 	// If a Kubernetes 'clientset' is needed, you must:
@@ -60,7 +62,8 @@ type deSECDNSProviderSolver struct {
 	// 3. uncomment the relevant code in the Initialize method below
 	// 4. ensure your webhook's service account has the required RBAC role
 	//    assigned to it for interacting with the Kubernetes APIs you need.
-	client *kubernetes.Clientset
+	client  *kubernetes.Clientset
+	BaseUrl string
 }
 
 // deSECDNSProviderConfig is a structure that is used to decode into when
@@ -184,7 +187,7 @@ func (c *deSECDNSProviderSolver) doAction(ch *v1alpha1.ChallengeRequest, action 
 		return err
 	}
 
-	api := &desec.API{Token: apiToken}
+	api := &desec.API{BaseUrl: c.BaseUrl, Token: apiToken}
 
 	// get dns domain from deSEC API
 	domain, err := api.GetDNSDomain(zone)

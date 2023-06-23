@@ -10,11 +10,10 @@ import (
 	"time"
 )
 
-const baseURL = "https://desec.io/api/v1"
-
 // API is the basic implemenataion of an API client for desec.io
 type API struct {
-	Token string
+	BaseUrl string
+	Token   string
 }
 
 // ErrorResponse defines the error response format
@@ -55,7 +54,7 @@ func (a *API) request(method, path string, body io.Reader, target interface{}) e
 		path = "/" + path
 	}
 
-	url := baseURL + path
+	url := a.BaseUrl + path
 
 	client := &http.Client{Timeout: time.Second * 10}
 
