@@ -45,7 +45,9 @@ func main() {
 	// webhook, where the Name() method will be used to disambiguate between
 	// the different implementations.
 	cmd.RunWebhookServer(GroupName,
-		&deSECDNSProviderSolver{},
+		&deSECDNSProviderSolver{
+			BaseUrl: "https://desec.io/api/v1",
+		},
 	)
 }
 
@@ -60,7 +62,8 @@ type deSECDNSProviderSolver struct {
 	// 3. uncomment the relevant code in the Initialize method below
 	// 4. ensure your webhook's service account has the required RBAC role
 	//    assigned to it for interacting with the Kubernetes APIs you need.
-	client *kubernetes.Clientset
+	client  *kubernetes.Clientset
+	BaseUrl string
 }
 
 // deSECDNSProviderConfig is a structure that is used to decode into when
@@ -184,7 +187,7 @@ func (c *deSECDNSProviderSolver) doAction(ch *v1alpha1.ChallengeRequest, action 
 		return err
 	}
 
-	api := &desec.API{Token: apiToken}
+	api := &desec.API{BaseUrl: c.BaseUrl, Token: apiToken}
 
 	// get dns domain from deSEC API
 	domain, err := api.GetDNSDomain(zone)
