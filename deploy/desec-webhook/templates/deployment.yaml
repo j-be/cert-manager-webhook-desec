@@ -18,8 +18,14 @@ spec:
       labels:
         app: {{ include "desec-webhook.name" . }}
         release: {{ .Release.Name }}
+    annotations:
+      container.apparmor.security.beta.kubernetes.io/desec-webhook: runtime/default
     spec:
       serviceAccountName: {{ include "desec-webhook.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -27,6 +33,13 @@ spec:
           args:
             - --tls-cert-file=/tls/tls.crt
             - --tls-private-key-file=/tls/tls.key
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
           env:
             - name: GROUP_NAME
               value: {{ .Values.groupName | quote }}
