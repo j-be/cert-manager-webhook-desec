@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/jetstack/cert-manager-webhook-desec/desec"
@@ -14,10 +13,6 @@ import (
 	"github.com/jetstack/cert-manager/test/acme/dns"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/slices"
-)
-
-var (
-	zone = os.Getenv("TEST_ZONE_NAME")
 )
 
 func TestRunsSuite(t *testing.T) {
