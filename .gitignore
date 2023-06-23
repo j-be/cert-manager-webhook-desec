@@ -15,4 +15,4 @@
 cert-manager-webhook-example
 
 # output dir
-_test
+_out

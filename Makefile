@@ -1,42 +1,35 @@
-GO ?= $(shell which go)
-OS ?= $(shell $(GO) env GOOS)
-ARCH ?= $(shell $(GO) env GOARCH)
-
-IMAGE_NAME := "webhook"
+IMAGE_NAME := "kmorning/cert-manager-webhook-desec"
 IMAGE_TAG := "latest"
 
-OUT := $(shell pwd)/_test
+OUT := $(shell pwd)/_out
 
-KUBE_VERSION=1.26.1
+KUBEBUILDER_VERSION=2.3.1
+KUBEBUILDER_URL=https://github.com/kubernetes-sigs/kubebuilder/releases/download/v$(KUBEBUILDER_VERSION)/kubebuilder_$(KUBEBUILDER_VERSION)_linux_amd64.tar.gz
+KUBEBUILDER_TGZ=$(OUT)/kubebuilder/kubebuilder_$(KUBEBUILDER_VERSION)_linux_amd64.tar.gz
+KUBEBUILDER_BIN=$(OUT)/kubebuilder/bin
 
-$(shell mkdir -p "$(OUT)")
-export TEST_ASSET_ETCD=_test/kubebuilder/etcd
-export TEST_ASSET_KUBE_APISERVER=_test/kubebuilder/kube-apiserver
-export TEST_ASSET_KUBECTL=_test/kubebuilder/kubectl
+$(shell mkdir -p "$(KUBEBUILDER_BIN)")
 
-test: _test/kubebuilder
-	$(GO) test -v .
+$(KUBEBUILDER_TGZ):
+	curl -sfL $(KUBEBUILDER_URL) -o $(KUBEBUILDER_TGZ)
 
-_test/kubebuilder:
-	curl -fsSL https://go.kubebuilder.io/test-tools/$(KUBE_VERSION)/$(OS)/$(ARCH) -o kubebuilder-tools.tar.gz
-	mkdir -p _test/kubebuilder
-	tar -xvf kubebuilder-tools.tar.gz
-	mv kubebuilder/bin/* _test/kubebuilder/
-	rm kubebuilder-tools.tar.gz
-	rm -R kubebuilder
+prepare: $(KUBEBUILDER_TGZ)
+	tar xvzf $(KUBEBUILDER_TGZ) --strip-components=1 -C _out/kubebuilder
 
-clean: clean-kubebuilder
+$(KUBEBUILDER_BIN)/etcd: prepare
+$(KUBEBUILDER_BIN)/kube-apiserver: prepare
+$(KUBEBUILDER_BIN)/kubebuilder: prepare
+$(KUBEBUILDER_BIN)/kubectl: prepare
 
-clean-kubebuilder:
-	rm -Rf _test/kubebuilder
+test: $(KUBEBUILDER_BIN)/etcd $(KUBEBUILDER_BIN)/kube-apiserver $(KUBEBUILDER_BIN)/kubebuilder $(KUBEBUILDER_BIN)/kubectl
+	go test -v .
 
 build:
 	docker build -t "$(IMAGE_NAME):$(IMAGE_TAG)" .
 
 .PHONY: rendered-manifest.yaml
 rendered-manifest.yaml:
-	helm template \
-	    --name example-webhook \
-            --set image.repository=$(IMAGE_NAME) \
-            --set image.tag=$(IMAGE_TAG) \
-            deploy/example-webhook > "$(OUT)/rendered-manifest.yaml"
+	helm template desec-webhook \
+        --set image.repository=$(IMAGE_NAME) \
+        --set image.tag=$(IMAGE_TAG) \
+        deploy/desec-webhook > "$(OUT)/rendered-manifest.yaml"
