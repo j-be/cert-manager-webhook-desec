@@ -17,6 +17,3 @@ cert-manager-webhook-example
 # Make artifacts
 _out
 _test
-
-# Keep test api token secret
-testdata/desec/desec-token.yaml
